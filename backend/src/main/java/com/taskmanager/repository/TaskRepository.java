@@ -29,7 +29,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("SELECT t FROM Task t WHERE t.user.id = :userId AND t.dueDate = :date")
     List<Task> findByUserIdAndDueDate(@Param("userId") Long userId, @Param("date") LocalDate date);
 
-    @Query("SELECT t FROM Task t WHERE t.reminderTime BETWEEN :start AND :end")
+    @Query("SELECT t FROM Task t WHERE t.reminderTime BETWEEN :start AND :end AND t.reminderSent = false")
     List<Task> findTasksForReminder(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
     long countByUserIdAndStatus(Long userId, Task.Status status);

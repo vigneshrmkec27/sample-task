@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Objects;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,6 +34,7 @@ public class TaskService {
         task.setStatus(request.getStatus());
         task.setDueDate(request.getDueDate());
         task.setReminderTime(request.getReminderTime());
+        task.setReminderSent(false);
         task.setUser(user);
 
         Task savedTask = taskRepository.save(task);
@@ -53,6 +55,9 @@ public class TaskService {
         task.setPriority(request.getPriority());
         task.setStatus(request.getStatus());
         task.setDueDate(request.getDueDate());
+        if (!Objects.equals(task.getReminderTime(), request.getReminderTime())) {
+            task.setReminderSent(false);
+        }
         task.setReminderTime(request.getReminderTime());
 
         Task updatedTask = taskRepository.save(task);

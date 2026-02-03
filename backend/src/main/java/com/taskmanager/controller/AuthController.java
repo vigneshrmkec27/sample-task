@@ -57,7 +57,7 @@ public class AuthController {
 
             User user = userService.getUserByUsername(request.getUsername());
 
-            return ResponseEntity.ok(new JwtResponse(jwt, user.getUsername(), user.getEmail()));
+            return ResponseEntity.ok(new JwtResponse(jwt, user.getUsername(), user.getEmail(), user.getProfileImage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("Invalid credentials");

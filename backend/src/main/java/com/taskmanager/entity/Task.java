@@ -45,6 +45,9 @@ public class Task {
     @Column(name = "reminder_time")
     private LocalDateTime reminderTime;
 
+    @Column(name = "reminder_sent", nullable = false)
+    private boolean reminderSent = false;
+
     @CreationTimestamp
     @Column(name = "created_date", updatable = false)
     private LocalDateTime createdDate;

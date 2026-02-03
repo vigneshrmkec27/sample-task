@@ -45,8 +45,9 @@ function App() {
         setNotification({ message, type });
     };
 
-    const handleLoginSuccess = (response) => {
-        setUser({ username: response.username, email: response.email });
+    const handleLoginSuccess = async (response) => {
+        setUser({ username: response.username, email: response.email, profileImage: response.profileImage });
+        await fetchUserData();
         setCurrentView('dashboard');
     };
 
@@ -91,6 +92,7 @@ function App() {
                         darkMode={darkMode}
                         setDarkMode={setDarkMode}
                         showNotification={showNotification}
+                        onUserUpdate={setUser}
                     />
                 )}
             </div>
