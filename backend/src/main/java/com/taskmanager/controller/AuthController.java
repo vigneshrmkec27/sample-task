@@ -55,7 +55,7 @@ public class AuthController {
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
             String jwt = jwtService.generateToken(userDetails);
 
-            User user = userService.getUserByUsername(request.getUsername());
+            User user = userService.getUserByUsernameOrEmail(request.getUsername());
 
             return ResponseEntity.ok(new JwtResponse(jwt, user.getUsername(), user.getEmail(), user.getProfileImage()));
         } catch (Exception e) {

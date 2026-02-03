@@ -23,10 +23,7 @@ public class ReminderService {
     @Transactional
     public void checkReminders() {
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime start = now.minusMinutes(1);
-        LocalDateTime end = now.plusMinutes(1);
-
-        List<Task> tasksForReminder = taskRepository.findTasksForReminder(start, end);
+        List<Task> tasksForReminder = taskRepository.findTasksForReminder(now);
 
         for (Task task : tasksForReminder) {
             sendReminder(task);
