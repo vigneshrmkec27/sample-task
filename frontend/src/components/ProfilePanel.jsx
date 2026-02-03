@@ -27,7 +27,11 @@ const ProfilePanel = ({ user, onClose, onSave, isSaving }) => {
 
     const handleSubmit = (event) => {
         event.preventDefault();
-        onSave({ email, profileImage });
+        const normalizedEmail = email.trim();
+        onSave({
+            email: normalizedEmail.length > 0 ? normalizedEmail : null,
+            profileImage: profileImage || null
+        });
     };
 
     return (
