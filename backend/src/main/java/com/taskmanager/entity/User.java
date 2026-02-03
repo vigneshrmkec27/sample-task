@@ -40,7 +40,8 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    @Column(name = "profile_image", columnDefinition = "TEXT")
+    @Lob
+    @Column(name = "profile_image", columnDefinition = "LONGTEXT")
     private String profileImage;
 
     @CreationTimestamp

@@ -28,6 +28,7 @@ public class UserService implements UserDetailsService {
         System.out.println("Trying to load user with username: " + username);
 
         User user = userRepository.findByUsername(username)
+                .or(() -> userRepository.findByEmail(username))
                 .orElseThrow(() -> {
                     System.out.println("USER NOT FOUND: " + username);
                     return new UsernameNotFoundException("User not found: " + username);
@@ -108,6 +109,13 @@ public class UserService implements UserDetailsService {
     public User getUserByUsername(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+    }
+
+    @Transactional(readOnly = true)
+    public User getUserByUsernameOrEmail(String identifier) {
+        return userRepository.findByUsername(identifier)
+                .or(() -> userRepository.findByEmail(identifier))
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + identifier));
     }
 
     @Transactional
