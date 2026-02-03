@@ -104,7 +104,7 @@ const Dashboard = ({ user, darkMode, setDarkMode, showNotification, onUserUpdate
             showNotification('Profile updated successfully.');
             setShowProfilePanel(false);
         } catch (error) {
-            showNotification(error.response?.data || 'Failed to update profile', 'error');
+            showNotification(error.response?.data?.message || error.response?.data || 'Failed to update profile', 'error');
         } finally {
             setIsSavingProfile(false);
         }
