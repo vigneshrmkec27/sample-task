@@ -109,4 +109,20 @@ public class UserService implements UserDetailsService {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
     }
+
+    @Transactional
+    public User updateUserProfile(User user, String email, String profileImage) {
+        if (email != null && !email.isBlank() && !email.equals(user.getEmail())) {
+            if (userRepository.existsByEmail(email)) {
+                throw new UserAlreadyExistsException("Email already exists");
+            }
+            user.setEmail(email);
+        }
+
+        if (profileImage != null) {
+            user.setProfileImage(profileImage);
+        }
+
+        return userRepository.save(user);
+    }
 }

@@ -13,11 +13,13 @@ public class JwtResponse {
     private String type = "Bearer";
     private String username;
     private String email;
+    private String profileImage;
 
-    public JwtResponse(String token, String username, String email) {
+    public JwtResponse(String token, String username, String email, String profileImage) {
         this.token = token;
         this.username = username;
         this.email = email;
+        this.profileImage = profileImage;
         this.type = "Bearer";
     }
 }

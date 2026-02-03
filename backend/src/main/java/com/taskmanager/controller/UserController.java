@@ -1,5 +1,7 @@
 package com.taskmanager.controller;
 
+import com.taskmanager.dto.UserProfileResponse;
+import com.taskmanager.dto.UserProfileUpdateRequest;
 import com.taskmanager.entity.User;
 import com.taskmanager.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -7,8 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.Map;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/user")
@@ -19,15 +20,29 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping("/profile")
-    public ResponseEntity<Map<String, Object>> getUserProfile(Authentication authentication) {
+    public ResponseEntity<UserProfileResponse> getUserProfile(Authentication authentication) {
         User user = userService.getUserByUsername(authentication.getName());
 
-        Map<String, Object> profile = new HashMap<>();
-        profile.put("id", user.getId());
-        profile.put("username", user.getUsername());
-        profile.put("email", user.getEmail());
-        profile.put("createdAt", user.getCreatedAt());
+        return ResponseEntity.ok(toProfileResponse(user));
+    }
 
-        return ResponseEntity.ok(profile);
+    @PutMapping("/profile")
+    public ResponseEntity<UserProfileResponse> updateUserProfile(
+            @Valid @RequestBody UserProfileUpdateRequest request,
+            Authentication authentication
+    ) {
+        User user = userService.getUserByUsername(authentication.getName());
+        User updatedUser = userService.updateUserProfile(user, request.getEmail(), request.getProfileImage());
+        return ResponseEntity.ok(toProfileResponse(updatedUser));
+    }
+
+    private UserProfileResponse toProfileResponse(User user) {
+        return new UserProfileResponse(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getProfileImage(),
+                user.getCreatedAt()
+        );
     }
 }

@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     Search, Plus, Calendar, LogOut,
-    Sun, Moon, Check, ChevronLeft, ChevronRight
+    Sun, Moon, Check, ChevronLeft, ChevronRight, UserCircle,
+    LayoutGrid, List
 } from 'lucide-react';
 import { taskService } from '../services/taskService';
 import { authService } from '../services/authService';
@@ -10,8 +11,10 @@ import TaskCard from './TaskCard';
 import TaskModal from './TaskModal';
 import TaskDetail from './TaskDetail';
 import LiveClock from './LiveClock';
+import CalendarView from './CalendarView';
+import ProfilePanel from './ProfilePanel';
 
-const Dashboard = ({ user, darkMode, setDarkMode, showNotification }) => {
+const Dashboard = ({ user, darkMode, setDarkMode, showNotification, onUserUpdate }) => {
     const [tasks, setTasks] = useState([]);
     const [filteredTasks, setFilteredTasks] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
@@ -22,13 +25,15 @@ const Dashboard = ({ user, darkMode, setDarkMode, showNotification }) => {
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedTask, setSelectedTask] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [showProfilePanel, setShowProfilePanel] = useState(false);
+    const [isSavingProfile, setIsSavingProfile] = useState(false);
+    const [viewMode, setViewMode] = useState('list');
+    const [selectedDate, setSelectedDate] = useState(new Date());
+    const [calendarMonth, setCalendarMonth] = useState(new Date());
 
     const tasksPerPage = 9;
 
-    useEffect(() => { fetchTasks(); }, []);
-    useEffect(() => { applyFilters(); }, [searchQuery, priorityFilter, statusFilter, tasks]);
-
-    const fetchTasks = async () => {
+    const fetchTasks = useCallback(async () => {
         setLoading(true);
         try {
             const response = await taskService.getAllTasks();
@@ -46,9 +51,9 @@ const Dashboard = ({ user, darkMode, setDarkMode, showNotification }) => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [showNotification]);
 
-    const applyFilters = () => {
+    const applyFilters = useCallback(() => {
         let result = [...tasks];
 
         if (searchQuery.trim()) {
@@ -61,7 +66,10 @@ const Dashboard = ({ user, darkMode, setDarkMode, showNotification }) => {
 
         setFilteredTasks(result);
         setCurrentPage(1);
-    };
+    }, [priorityFilter, searchQuery, statusFilter, tasks]);
+
+    useEffect(() => { fetchTasks(); }, [fetchTasks]);
+    useEffect(() => { applyFilters(); }, [applyFilters]);
 
     const handleLogout = () => {
         authService.logout();
@@ -88,10 +96,27 @@ const Dashboard = ({ user, darkMode, setDarkMode, showNotification }) => {
         setSelectedTask(null);
     };
 
+    const handleProfileSave = async (payload) => {
+        setIsSavingProfile(true);
+        try {
+            const updatedUser = await authService.updateProfile(payload);
+            onUserUpdate(updatedUser);
+            showNotification('Profile updated successfully.');
+            setShowProfilePanel(false);
+        } catch (error) {
+            showNotification(error.response?.data || 'Failed to update profile', 'error');
+        } finally {
+            setIsSavingProfile(false);
+        }
+    };
+
     const totalPages = Math.ceil(filteredTasks.length / tasksPerPage);
     const indexOfLastTask = currentPage * tasksPerPage;
     const indexOfFirstTask = indexOfLastTask - tasksPerPage;
     const currentTasks = filteredTasks.slice(indexOfFirstTask, indexOfLastTask);
+    const stats = getTaskStats(tasks);
+    const selectedDateKey = selectedDate.toISOString().split('T')[0];
+    const tasksForSelectedDate = tasks.filter((task) => task.dueDate === selectedDateKey);
 
     return (
         <div className={`min-h-screen transition-colors duration-300 ${
@@ -106,6 +131,21 @@ const Dashboard = ({ user, darkMode, setDarkMode, showNotification }) => {
 
                     <div className="flex items-center justify-between gap-6">
                         <div className="flex items-center gap-4">
+                            <button
+                                onClick={() => setShowProfilePanel(true)}
+                                className="flex items-center justify-center h-12 w-12 rounded-2xl border border-gray-200/70 dark:border-white/10 bg-white/80 dark:bg-white/10 shadow-sm hover:shadow-md"
+                                aria-label="Open profile settings"
+                            >
+                                {user?.profileImage ? (
+                                    <img
+                                        src={user.profileImage}
+                                        alt="Profile"
+                                        className="h-11 w-11 rounded-2xl object-cover"
+                                    />
+                                ) : (
+                                    <UserCircle className="w-7 h-7 text-indigo-500" />
+                                )}
+                            </button>
                             <div className="p-3 rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 shadow-lg">
                                 <Check className="w-7 h-7 text-white" />
                             </div>
@@ -188,47 +228,149 @@ const Dashboard = ({ user, darkMode, setDarkMode, showNotification }) => {
 
             {/* MAIN */}
             <main className="max-w-7xl mx-auto px-6 py-12">
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10">
-                    {currentTasks.map(task => (
-                        <TaskCard
-                            key={task.id}
-                            task={task}
-                            onClick={() => openDetailModal(task)}
-                        />
+                <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                    {[
+                        { label: 'Total Tasks', value: stats.total, accent: 'from-indigo-500 to-purple-500' },
+                        { label: 'In Progress', value: stats.inProgress, accent: 'from-sky-500 to-indigo-500' },
+                        { label: 'Completed', value: stats.completed, accent: 'from-emerald-500 to-green-500' },
+                    ].map((card) => (
+                        <div
+                            key={card.label}
+                            className="p-5 rounded-2xl border border-gray-200/70 dark:border-white/10 bg-white/80 dark:bg-gray-900/60 shadow-lg"
+                        >
+                            <p className="text-sm text-gray-500 dark:text-gray-400">{card.label}</p>
+                            <div className="mt-4 flex items-center justify-between">
+                                <span className="text-3xl font-semibold text-gray-900 dark:text-white">{card.value}</span>
+                                <div className={`h-10 w-10 rounded-full bg-gradient-to-br ${card.accent}`} />
+                            </div>
+                        </div>
                     ))}
+                </section>
+
+                <div className="flex items-center justify-between flex-wrap gap-4 mb-8">
+                    <div>
+                        <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">Your Tasks</h2>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Browse tasks in a list or calendar view.
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setViewMode('list')}
+                            className={`px-4 py-2 rounded-xl border flex items-center gap-2 ${
+                                viewMode === 'list'
+                                    ? 'bg-indigo-600 text-white border-indigo-600'
+                                    : 'border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10'
+                            }`}
+                        >
+                            <List className="w-4 h-4" /> List
+                        </button>
+                        <button
+                            onClick={() => setViewMode('calendar')}
+                            className={`px-4 py-2 rounded-xl border flex items-center gap-2 ${
+                                viewMode === 'calendar'
+                                    ? 'bg-indigo-600 text-white border-indigo-600'
+                                    : 'border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10'
+                            }`}
+                        >
+                            <LayoutGrid className="w-4 h-4" /> Calendar
+                        </button>
+                    </div>
                 </div>
 
-                {totalPages > 1 && (
-                    <div className="flex justify-center items-center gap-2 mt-14">
-                        <button
-                            disabled={currentPage === 1}
-                            onClick={() => setCurrentPage(p => p - 1)}
-                            className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-white/10 disabled:opacity-40"
-                        >
-                            <ChevronLeft />
-                        </button>
+                {viewMode === 'list' ? (
+                    <>
+                        {loading ? (
+                            <div className="rounded-2xl border border-dashed border-gray-300 dark:border-white/10 p-10 text-center text-gray-500 dark:text-gray-400">
+                                Loading tasks...
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10">
+                                {currentTasks.map(task => (
+                                    <TaskCard
+                                        key={task.id}
+                                        task={task}
+                                        onClick={() => openDetailModal(task)}
+                                    />
+                                ))}
+                            </div>
+                        )}
 
-                        {[...Array(totalPages)].map((_, i) => (
-                            <button
-                                key={i}
-                                onClick={() => setCurrentPage(i + 1)}
-                                className={`px-3 py-1.5 rounded-lg text-sm transition ${
-                                    currentPage === i + 1
-                                        ? 'bg-indigo-600 text-white'
-                                        : 'hover:bg-gray-200 dark:hover:bg-white/10'
-                                }`}
-                            >
-                                {i + 1}
-                            </button>
-                        ))}
+                        {totalPages > 1 && (
+                            <div className="flex justify-center items-center gap-2 mt-14">
+                                <button
+                                    disabled={currentPage === 1}
+                                    onClick={() => setCurrentPage(p => p - 1)}
+                                    className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-white/10 disabled:opacity-40"
+                                >
+                                    <ChevronLeft />
+                                </button>
 
-                        <button
-                            disabled={currentPage === totalPages}
-                            onClick={() => setCurrentPage(p => p + 1)}
-                            className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-white/10 disabled:opacity-40"
-                        >
-                            <ChevronRight />
-                        </button>
+                                {[...Array(totalPages)].map((_, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => setCurrentPage(i + 1)}
+                                        className={`px-3 py-1.5 rounded-lg text-sm transition ${
+                                            currentPage === i + 1
+                                                ? 'bg-indigo-600 text-white'
+                                                : 'hover:bg-gray-200 dark:hover:bg-white/10'
+                                        }`}
+                                    >
+                                        {i + 1}
+                                    </button>
+                                ))}
+
+                                <button
+                                    disabled={currentPage === totalPages}
+                                    onClick={() => setCurrentPage(p => p + 1)}
+                                    className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-white/10 disabled:opacity-40"
+                                >
+                                    <ChevronRight />
+                                </button>
+                            </div>
+                        )}
+                    </>
+                ) : (
+                    <div className="grid grid-cols-1 xl:grid-cols-[2fr,1fr] gap-8">
+                        <CalendarView
+                            tasks={tasks}
+                            selectedDate={selectedDate}
+                            currentMonth={calendarMonth}
+                            onMonthChange={setCalendarMonth}
+                            onDateSelect={setSelectedDate}
+                        />
+                        <div className="rounded-3xl border border-gray-200/70 dark:border-white/10 bg-white/80 dark:bg-gray-900/60 p-6 shadow-[0_10px_40px_rgba(15,23,42,0.08)]">
+                            <div className="mb-4">
+                                <p className="text-sm text-gray-500 dark:text-gray-400">Tasks for</p>
+                                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                                    {selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                                </h3>
+                            </div>
+                            {loading ? (
+                                <p className="text-sm text-gray-500 dark:text-gray-400">Loading tasks...</p>
+                            ) : tasksForSelectedDate.length === 0 ? (
+                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                    No tasks scheduled for this date.
+                                </p>
+                            ) : (
+                                <div className="space-y-3">
+                                    {tasksForSelectedDate.map((task) => (
+                                        <button
+                                            key={task.id}
+                                            onClick={() => openDetailModal(task)}
+                                            className="w-full text-left p-4 rounded-2xl border border-gray-200/70 dark:border-white/10 bg-white dark:bg-white/5 hover:shadow-md"
+                                        >
+                                            <h4 className="font-semibold text-gray-900 dark:text-white">
+                                                {task.taskName}
+                                            </h4>
+                                            <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
+                                                {task.description || 'No description'}
+                                            </p>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 )}
             </main>
@@ -258,6 +400,15 @@ const Dashboard = ({ user, darkMode, setDarkMode, showNotification }) => {
                         fetchTasks();
                         closeDetailModal();
                     }}
+                />
+            )}
+
+            {showProfilePanel && (
+                <ProfilePanel
+                    user={user}
+                    onClose={() => setShowProfilePanel(false)}
+                    onSave={handleProfileSave}
+                    isSaving={isSavingProfile}
                 />
             )}
         </div>
