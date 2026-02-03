@@ -19,9 +19,19 @@ public class EmailService {
     @Value("${spring.mail.username:}")
     private String fromAddress;
 
+    @Value("${spring.mail.username:}")
+    private String username;
+
+    @Value("${spring.mail.password:}")
+    private String password;
+
     public boolean sendTaskReminder(User user, Task task) {
         if (user.getEmail() == null || user.getEmail().isBlank()) {
             log.warn("Skipping reminder email. User {} has no email set.", user.getUsername());
+            return false;
+        }
+        if (username == null || username.isBlank() || password == null || password.isBlank()) {
+            log.warn("Skipping reminder email. Mail credentials are not configured.");
             return false;
         }
 
