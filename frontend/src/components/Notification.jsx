@@ -1,6 +1,22 @@
 import React from 'react';
 
 const Notification = ({ message, type = 'success', onClose }) => {
+    const renderMessage = () => {
+        if (message == null) {
+            return '';
+        }
+        if (typeof message === 'string' || typeof message === 'number') {
+            return message;
+        }
+        if (typeof message === 'object' && 'message' in message) {
+            return message.message;
+        }
+        try {
+            return JSON.stringify(message);
+        } catch (error) {
+            return 'An unexpected error occurred.';
+        }
+    };
     React.useEffect(() => {
         const timer = setTimeout(() => {
             if (onClose) onClose();
@@ -32,7 +48,7 @@ const Notification = ({ message, type = 'success', onClose }) => {
             `}
         >
             <p className="text-sm font-semibold leading-snug">
-                {message}
+                {renderMessage()}
             </p>
         </div>
     );
