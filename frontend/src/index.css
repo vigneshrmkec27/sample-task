@@ -25,13 +25,13 @@ body {
     'Helvetica Neue', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-color: #f9fafb;
-    color: #111827;
+    background-color: #05060b;
+    color: #f8fafc;
 }
 
 .dark body {
-    background-color: #030712;
-    color: #f9fafb;
+    background-color: #05060b;
+    color: #f8fafc;
 }
 
 code {
@@ -72,6 +72,54 @@ code {
 
 .dark ::-webkit-scrollbar-thumb:hover {
     background: #6b7280;
+}
+
+/* --------------------------------------------------
+   Cinematic Background Utilities
+-------------------------------------------------- */
+
+@keyframes aurora {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+@keyframes floatSlow {
+    0%,
+    100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-12px);
+    }
+}
+
+.aurora-gradient {
+    background: radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.35), transparent 45%),
+    radial-gradient(circle at 80% 30%, rgba(16, 185, 129, 0.3), transparent 45%),
+    radial-gradient(circle at 50% 80%, rgba(236, 72, 153, 0.25), transparent 40%),
+    linear-gradient(120deg, #020617, #0b1020, #05060b);
+    background-size: 300% 300%;
+    animation: aurora 18s ease-in-out infinite;
+}
+
+.noise-layer {
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg width='180' height='180' viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23noiseFilter)' opacity='0.12'/%3E%3C/svg%3E");
+    mix-blend-mode: soft-light;
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.float-slow {
+    animation: floatSlow 8s ease-in-out infinite;
 }
 
 /* --------------------------------------------------
