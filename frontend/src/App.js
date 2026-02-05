@@ -1,102 +1,89 @@
-import React, { useState, useEffect } from 'react';
-import Login from './components/Login';
-import Register from './components/Register';
-import Dashboard from './components/Dashboard';
-import Notification from './components/Notification';
-import { authService } from './services/authService';
+import React, { useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import AnimatedSplash from './components/AnimatedSplash';
+import LoginScene from './components/LoginScene';
+import AppShell from './components/AppShell';
+import { MotionConfigProvider, MOTION_TOKENS } from './components/MotionConfig';
+
+const initialTodos = [
+    {
+        id: 'todo-1',
+        title: 'Design the cinematic login flow',
+        description: 'Shared layout morphs and magnetic hover effect.',
+        completed: true,
+    },
+    {
+        id: 'todo-2',
+        title: 'Animate todo list entrance',
+        description: 'Spring in, staggered, with soft glow.',
+        completed: false,
+    },
+    {
+        id: 'todo-3',
+        title: 'Polish empty state illustration',
+        description: 'Breathing motion and micro-copy.',
+        completed: false,
+    },
+];
 
 function App() {
-    const [currentView, setCurrentView] = useState('login');
-    const [user, setUser] = useState(null);
-    const [darkMode, setDarkMode] = useState(
-        localStorage.getItem('darkMode') === 'true'
-    );
-    const [notification, setNotification] = useState(null);
+    const [phase, setPhase] = useState('splash');
+    const [todos, setTodos] = useState(initialTodos);
+    const [darkMode, setDarkMode] = useState(true);
+    const [user, setUser] = useState({ name: 'Ava', handle: '@ava' });
 
     useEffect(() => {
-        localStorage.setItem('darkMode', darkMode);
-        if (darkMode) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
+        document.documentElement.classList.toggle('dark', darkMode);
     }, [darkMode]);
 
-    useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (token && authService.isAuthenticated()) {
-            fetchUserData();
-        }
-    }, []);
+    const progress = useMemo(() => {
+        if (todos.length === 0) return 0;
+        return Math.round(
+            (todos.filter((todo) => todo.completed).length / todos.length) * 100
+        );
+    }, [todos]);
 
-    const fetchUserData = async () => {
-        try {
-            const userData = await authService.getCurrentUser();
-            setUser(userData);
-            setCurrentView('dashboard');
-        } catch (error) {
-            console.error('Error fetching user:', error);
-            authService.logout();
-            setCurrentView('login');
-        }
-    };
-
-    const showNotification = (message, type = 'success') => {
-        setNotification({ message, type });
-    };
-
-    const handleLoginSuccess = async (response) => {
-        setUser({ username: response.username, email: response.email, profileImage: response.profileImage });
-        await fetchUserData();
-        setCurrentView('dashboard');
-    };
-
-    const handleRegisterSuccess = () => {
-        setCurrentView('login');
+    const handleLogin = (profile) => {
+        setUser(profile);
+        setPhase('app');
     };
 
     return (
-        <div className="min-h-screen relative overflow-hidden">
-            {/* Global Notification */}
-            {notification && (
-                <Notification
-                    message={notification.message}
-                    type={notification.type}
-                    onClose={() => setNotification(null)}
-                />
-            )}
+        <MotionConfigProvider>
+            <div className="min-h-screen bg-slate-950 text-white">
+                <AnimatePresence mode="wait">
+                    {phase === 'splash' && (
+                        <AnimatedSplash key="splash" onComplete={() => setPhase('login')} />
+                    )}
+                </AnimatePresence>
 
-            {/* View Container */}
-            <div className="min-h-screen transition-opacity duration-300 ease-in-out">
-                {currentView === 'login' && (
-                    <Login
-                        onLoginSuccess={handleLoginSuccess}
-                        onSwitchToRegister={() => setCurrentView('register')}
-                        darkMode={darkMode}
-                        showNotification={showNotification}
-                    />
-                )}
+                <AnimatePresence mode="wait">
+                    {phase === 'login' && (
+                        <LoginScene key="login" onLoginSuccess={handleLogin} />
+                    )}
+                </AnimatePresence>
 
-                {currentView === 'register' && (
-                    <Register
-                        onRegisterSuccess={handleRegisterSuccess}
-                        onSwitchToLogin={() => setCurrentView('login')}
-                        darkMode={darkMode}
-                        showNotification={showNotification}
-                    />
-                )}
-
-                {currentView === 'dashboard' && user && (
-                    <Dashboard
-                        user={user}
-                        darkMode={darkMode}
-                        setDarkMode={setDarkMode}
-                        showNotification={showNotification}
-                        onUserUpdate={setUser}
-                    />
-                )}
+                <AnimatePresence mode="wait">
+                    {phase === 'app' && (
+                        <motion.div
+                            key="app"
+                            layoutId="login-button"
+                            className="min-h-screen"
+                            transition={MOTION_TOKENS.spring}
+                        >
+                            <AppShell
+                                user={user}
+                                todos={todos}
+                                setTodos={setTodos}
+                                progress={progress}
+                                darkMode={darkMode}
+                                onToggleTheme={() => setDarkMode((prev) => !prev)}
+                            />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
-        </div>
+        </MotionConfigProvider>
     );
 }
 
