@@ -1,10 +1,17 @@
 import React, { useState } from 'react';
-import { AnimatePresence, motion, useMotionValue, useReducedMotion, useSpring } from 'framer-motion';
+import {
+    AnimatePresence,
+    motion,
+    useMotionValue,
+    useReducedMotion,
+    useSpring
+} from 'framer-motion';
 import { Eye, EyeOff } from 'lucide-react';
 import Lottie from 'lottie-react';
 import { authService } from '../services/authService';
 import orbAnimation from '../assets/orb-lottie.json';
 
+/* ---------------- Morphing Icon ---------------- */
 const MorphingSparkIcon = () => (
     <motion.svg
         width="22"
@@ -29,6 +36,7 @@ const MorphingSparkIcon = () => (
     </motion.svg>
 );
 
+/* ================= LOGIN ================= */
 const Login = ({ onLoginSuccess, onSwitchToRegister, showNotification }) => {
     const [formData, setFormData] = useState({ username: '', password: '' });
     const [loading, setLoading] = useState(false);
@@ -41,9 +49,9 @@ const Login = ({ onLoginSuccess, onSwitchToRegister, showNotification }) => {
     const springY = useSpring(y, { stiffness: 140, damping: 16, mass: 0.5 });
     const prefersReducedMotion = useReducedMotion();
 
+    /* ---------------- Handlers ---------------- */
     const handleSubmit = async (e) => {
         e.preventDefault();
-
         if (!formData.username || !formData.password) {
             showNotification('Please fill in all fields', 'error');
             return;
@@ -64,12 +72,10 @@ const Login = ({ onLoginSuccess, onSwitchToRegister, showNotification }) => {
         }
     };
 
-    const handlePointerMove = (event) => {
-        const bounds = event.currentTarget.getBoundingClientRect();
-        const offsetX = event.clientX - bounds.left - bounds.width / 2;
-        const offsetY = event.clientY - bounds.top - bounds.height / 2;
-        x.set(offsetX * 0.2);
-        y.set(offsetY * 0.2);
+    const handlePointerMove = (e) => {
+        const b = e.currentTarget.getBoundingClientRect();
+        x.set((e.clientX - b.left - b.width / 2) * 0.2);
+        y.set((e.clientY - b.top - b.height / 2) * 0.2);
     };
 
     const handlePointerLeave = () => {
@@ -77,19 +83,20 @@ const Login = ({ onLoginSuccess, onSwitchToRegister, showNotification }) => {
         y.set(0);
     };
 
-    const handleRipple = (event) => {
-        const bounds = event.currentTarget.getBoundingClientRect();
+    const handleRipple = (e) => {
+        const b = e.currentTarget.getBoundingClientRect();
         setRipple({
-            x: event.clientX - bounds.left,
-            y: event.clientY - bounds.top,
-            key: Date.now(),
+            x: e.clientX - b.left,
+            y: e.clientY - b.top,
+            key: Date.now()
         });
     };
 
+    /* ================= UI ================= */
     return (
         <div className="min-h-screen flex overflow-hidden">
             {/* LEFT — FORM */}
-            <div className="w-full lg:w-[45%] flex items-center justify-center px-10 bg-[#0b0f1d] text-white z-10 relative overflow-hidden">
+            <div className="w-full lg:w-[45%] flex items-center justify-center px-10 bg-[#0b0f1d] text-white relative overflow-hidden z-10">
                 <div className="absolute inset-0 futuristic-gradient opacity-90" />
                 <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-indigo-500/30 blur-[120px] blob-drift" />
                 <div className="absolute bottom-0 right-0 h-80 w-80 rounded-full bg-sky-400/20 blur-[140px] blob-drift" />
@@ -102,8 +109,12 @@ const Login = ({ onLoginSuccess, onSwitchToRegister, showNotification }) => {
                 >
                     <div className="flex items-center justify-between mb-8">
                         <div>
-                            <p className="text-xs uppercase tracking-[0.3em] text-indigo-200/70">Secure sign in</p>
-                            <h1 className="text-3xl font-semibold tracking-tight">Welcome back</h1>
+                            <p className="text-xs uppercase tracking-[0.3em] text-indigo-200/70">
+                                Secure sign in
+                            </p>
+                            <h1 className="text-3xl font-semibold tracking-tight">
+                                Welcome back
+                            </h1>
                         </div>
                         <div className="h-12 w-12 rounded-2xl bg-white/10 flex items-center justify-center neon-ring">
                             <MorphingSparkIcon />
@@ -111,6 +122,7 @@ const Login = ({ onLoginSuccess, onSwitchToRegister, showNotification }) => {
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-5">
+                        {/* Username */}
                         <label className="relative block">
                             <input
                                 type="text"
@@ -127,6 +139,7 @@ const Login = ({ onLoginSuccess, onSwitchToRegister, showNotification }) => {
                             </span>
                         </label>
 
+                        {/* Password */}
                         <label className="relative block">
                             <input
                                 type={showPassword ? 'text' : 'password'}
@@ -144,18 +157,14 @@ const Login = ({ onLoginSuccess, onSwitchToRegister, showNotification }) => {
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-white transition"
+                                className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-white"
                                 tabIndex={-1}
-                                aria-label="Toggle password visibility"
                             >
                                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                             </button>
                         </label>
 
-                        <div className="text-right text-xs text-slate-400 hover:text-indigo-200 cursor-pointer">
-                            Forgot Password?
-                        </div>
-
+                        {/* Submit */}
                         <motion.button
                             type="submit"
                             disabled={loading}
@@ -167,7 +176,6 @@ const Login = ({ onLoginSuccess, onSwitchToRegister, showNotification }) => {
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                         >
-                            <span className="absolute inset-0 bg-gradient-to-r from-indigo-500/40 via-sky-400/30 to-emerald-400/40 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                             <AnimatePresence>
                                 <motion.span
                                     key={ripple.key}
@@ -179,19 +187,9 @@ const Login = ({ onLoginSuccess, onSwitchToRegister, showNotification }) => {
                                     transition={{ duration: 0.6 }}
                                 />
                             </AnimatePresence>
-                            <span className="relative z-10 flex items-center gap-3">
-                                {loading ? (
-                                    <>
-                                        <motion.span
-                                            className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white"
-                                            animate={{ rotate: 360 }}
-                                            transition={{ repeat: Infinity, duration: 0.8, ease: 'linear' }}
-                                        />
-                                        Signing in…
-                                    </>
-                                ) : (
-                                    'Login'
-                                )}
+
+                            <span className="relative z-10">
+                                {loading ? 'Signing in…' : 'Login'}
                             </span>
                         </motion.button>
                     </form>
@@ -208,35 +206,25 @@ const Login = ({ onLoginSuccess, onSwitchToRegister, showNotification }) => {
                 </motion.div>
             </div>
 
-            {/* RIGHT — PREMIUM ABSTRACT PANEL */}
+            {/* RIGHT — VISUAL */}
             <div className="hidden lg:flex w-[55%] relative items-center justify-center bg-[#05060b] overflow-hidden">
                 <div className="absolute inset-0 aurora-gradient" />
                 <div className="absolute -top-24 right-0 h-72 w-72 rounded-full bg-purple-500/30 blur-[140px] blob-drift" />
                 <div className="absolute bottom-0 left-0 h-80 w-80 rounded-full bg-emerald-400/20 blur-[160px] blob-drift" />
 
                 <div className="relative z-10 max-w-lg text-center px-12 text-white">
-                    <div className="glass-panel rounded-3xl p-10 mb-10 border border-white/10">
-                        <div className="flex items-center justify-between mb-8">
-                            <div>
-                                <p className="text-xs uppercase tracking-[0.3em] text-indigo-200/70">Momentum</p>
-                                <h3 className="text-xl font-semibold">Project sync</h3>
-                            </div>
-                            <div className="h-12 w-12 rounded-2xl bg-white/10 flex items-center justify-center">
-                                <MorphingSparkIcon />
-                            </div>
-                        </div>
-
-                        <div className="flex items-center justify-center">
-                            <Lottie
-                                animationData={orbAnimation}
-                                loop
-                                autoplay={!prefersReducedMotion}
-                                className="h-44 w-44"
-                            />
-                        </div>
+                    <div className="rounded-3xl p-10 mb-10 border border-white/10 backdrop-blur-2xl">
+                        <Lottie
+                            animationData={orbAnimation}
+                            loop
+                            autoplay={!prefersReducedMotion}
+                            className="h-44 w-44 mx-auto"
+                        />
                     </div>
 
-                    <h2 className="text-3xl font-semibold mb-3">Make your work effortless</h2>
+                    <h2 className="text-3xl font-semibold mb-3">
+                        Make your work effortless
+                    </h2>
                     <p className="text-slate-300 leading-relaxed">
                         Organize tasks, track progress, and stay focused with cinematic clarity.
                     </p>

@@ -19,6 +19,7 @@ const TaskCard = ({ task, onClick }) => {
                 cursor-pointer
                 overflow-hidden
                 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 dark:focus-within:ring-offset-gray-900
+                task-card
             "
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
