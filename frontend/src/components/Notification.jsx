@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 
 const Notification = ({ message, type = 'success', onClose }) => {
     const renderMessage = () => {
@@ -26,7 +27,7 @@ const Notification = ({ message, type = 'success', onClose }) => {
     }, [onClose]);
 
     return (
-        <div
+        <motion.div
             role="alert"
             aria-live="assertive"
             className={`
@@ -37,8 +38,6 @@ const Notification = ({ message, type = 'success', onClose }) => {
                 shadow-2xl
                 border
                 backdrop-blur-md
-                transition-all duration-300
-                animate-in slide-in-from-top-4 fade-in
                 ${
                 type === 'error'
                     ? 'bg-red-500/90 border-red-400'
@@ -46,11 +45,15 @@ const Notification = ({ message, type = 'success', onClose }) => {
             }
                 text-white
             `}
+            initial={{ opacity: 0, y: -12, filter: 'blur(8px)' }}
+            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, y: -8, filter: 'blur(8px)' }}
+            transition={{ duration: 0.3 }}
         >
             <p className="text-sm font-semibold leading-snug">
                 {renderMessage()}
             </p>
-        </div>
+        </motion.div>
     );
 };
 
