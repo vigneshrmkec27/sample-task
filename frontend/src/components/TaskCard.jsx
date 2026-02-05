@@ -1,18 +1,19 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { Calendar } from 'lucide-react';
 import { getPriorityColor, getStatusColor, formatDate } from '../utils/helpers';
 
 const TaskCard = ({ task, onClick }) => {
     return (
-        <div
+        <motion.div
             onClick={onClick}
             className="
                 group relative
-                bg-white dark:bg-gray-800
+                bg-white/90 dark:bg-white/5
                 rounded-2xl
-                border border-gray-200/80 dark:border-gray-700/80
+                border border-gray-200/40 dark:border-white/10
                 shadow-[0_2px_6px_rgba(0,0,0,0.05)]
-                hover:shadow-[0_12px_28px_rgba(0,0,0,0.12)]
+                hover:shadow-[0_20px_40px_rgba(15,23,42,0.25)]
                 transition-all duration-200 ease-out
                 hover:-translate-y-0.5
                 cursor-pointer
@@ -20,6 +21,8 @@ const TaskCard = ({ task, onClick }) => {
                 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 dark:focus-within:ring-offset-gray-900
                 task-card
             "
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
         >
             {/* Priority Accent */}
             <div
@@ -75,7 +78,7 @@ const TaskCard = ({ task, onClick }) => {
                     </div>
                 </div>
             </div>
-        </div>
+        </motion.div>
     );
 };
 

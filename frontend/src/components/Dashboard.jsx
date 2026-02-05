@@ -1,19 +1,60 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useMemo, useState } from 'react';
 import {
     Search, Plus, Calendar, LogOut,
-    Sun, Moon, Check, ChevronLeft, ChevronRight, UserCircle,
+    Check, ChevronLeft, ChevronRight, UserCircle,
     LayoutGrid, List
 } from 'lucide-react';
+import {
+    AnimatePresence,
+    motion,
+    useMotionValue,
+    useReducedMotion,
+    useScroll,
+    useSpring,
+    useTransform
+} from 'framer-motion';
+
 import { taskService } from '../services/taskService';
 import { authService } from '../services/authService';
 import { getTaskStats } from '../utils/helpers';
+
 import TaskCard from './TaskCard';
 import TaskModal from './TaskModal';
 import TaskDetail from './TaskDetail';
 import LiveClock from './LiveClock';
 import CalendarView from './CalendarView';
 import ProfilePanel from './ProfilePanel';
+import ThemeToggle from './ThemeToggle';
 
+/* -------------------- Animated Counter -------------------- */
+const AnimatedCounter = ({ value }) => {
+    const shouldReduceMotion = useReducedMotion();
+    const motionValue = useMotionValue(value);
+    const spring = useSpring(motionValue, { stiffness: 120, damping: 20 });
+    const rounded = useTransform(spring, latest => Math.round(latest));
+
+    useEffect(() => {
+        motionValue.set(value);
+    }, [motionValue, value]);
+
+    if (shouldReduceMotion) return <span>{value}</span>;
+    return <motion.span>{rounded}</motion.span>;
+};
+
+/* -------------------- Skeleton -------------------- */
+const TaskCardSkeleton = () => (
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-xl shimmer">
+        <div className="h-4 w-2/3 rounded bg-white/10 mb-3" />
+        <div className="h-3 w-full rounded bg-white/10 mb-2" />
+        <div className="h-3 w-5/6 rounded bg-white/10 mb-6" />
+        <div className="flex justify-between">
+            <div className="h-3 w-24 rounded bg-white/10" />
+            <div className="h-6 w-16 rounded bg-white/10" />
+        </div>
+    </div>
+);
+
+/* ==================== DASHBOARD ==================== */
 const Dashboard = ({ user, darkMode, setDarkMode, showNotification, onUserUpdate }) => {
     const [tasks, setTasks] = useState([]);
     const [filteredTasks, setFilteredTasks] = useState([]);
@@ -30,21 +71,21 @@ const Dashboard = ({ user, darkMode, setDarkMode, showNotification, onUserUpdate
     const [viewMode, setViewMode] = useState('list');
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [calendarMonth, setCalendarMonth] = useState(new Date());
+    const [sidebarOpen, setSidebarOpen] = useState(true);
+
+    const shouldReduceMotion = useReducedMotion();
+    const { scrollY } = useScroll();
+    const parallaxY = useTransform(scrollY, [0, 300], [0, shouldReduceMotion ? 0 : -40]);
 
     const tasksPerPage = 9;
 
+    /* -------------------- Data -------------------- */
     const fetchTasks = useCallback(async () => {
         setLoading(true);
         try {
             const response = await taskService.getAllTasks();
-            let taskList = [];
-
-            if (response && response.content) {
-                taskList = Array.isArray(response.content) ? response.content : [];
-            } else if (Array.isArray(response)) {
-                taskList = response;
-            }
-            setTasks(taskList);
+            const list = response?.content ?? response ?? [];
+            setTasks(Array.isArray(list) ? list : []);
         } catch {
             showNotification('Failed to fetch tasks', 'error');
             setTasks([]);
@@ -55,284 +96,173 @@ const Dashboard = ({ user, darkMode, setDarkMode, showNotification, onUserUpdate
 
     const applyFilters = useCallback(() => {
         let result = [...tasks];
-
         if (searchQuery.trim()) {
-            result = result.filter(task =>
-                task.taskName?.toLowerCase().includes(searchQuery.toLowerCase())
+            result = result.filter(t =>
+                t.taskName?.toLowerCase().includes(searchQuery.toLowerCase())
             );
         }
         if (priorityFilter !== 'ALL') result = result.filter(t => t.priority === priorityFilter);
         if (statusFilter !== 'ALL') result = result.filter(t => t.status === statusFilter);
-
         setFilteredTasks(result);
         setCurrentPage(1);
-    }, [priorityFilter, searchQuery, statusFilter, tasks]);
+    }, [tasks, searchQuery, priorityFilter, statusFilter]);
 
     useEffect(() => { fetchTasks(); }, [fetchTasks]);
     useEffect(() => { applyFilters(); }, [applyFilters]);
 
+    /* -------------------- Helpers -------------------- */
     const handleLogout = () => {
         authService.logout();
         window.location.reload();
     };
 
-    const openTaskModal = (task = null) => {
-        setSelectedTask(task);
-        setShowTaskModal(true);
-    };
-
-    const closeTaskModal = () => {
-        setShowTaskModal(false);
-        setSelectedTask(null);
-    };
-
-    const openDetailModal = (task) => {
-        setSelectedTask(task);
-        setShowDetailModal(true);
-    };
-
-    const closeDetailModal = () => {
-        setShowDetailModal(false);
-        setSelectedTask(null);
-    };
-
-    const handleProfileSave = async (payload) => {
-        setIsSavingProfile(true);
-        try {
-            const updatedUser = await authService.updateProfile(payload);
-            onUserUpdate(updatedUser);
-            showNotification('Profile updated successfully.');
-            setShowProfilePanel(false);
-        } catch (error) {
-            showNotification(error.response?.data?.message || error.response?.data || 'Failed to update profile', 'error');
-        } finally {
-            setIsSavingProfile(false);
-        }
-    };
-
-    const totalPages = Math.ceil(filteredTasks.length / tasksPerPage);
-    const indexOfLastTask = currentPage * tasksPerPage;
-    const indexOfFirstTask = indexOfLastTask - tasksPerPage;
-    const currentTasks = filteredTasks.slice(indexOfFirstTask, indexOfLastTask);
     const stats = getTaskStats(tasks);
-    const selectedDateKey = selectedDate.toISOString().split('T')[0];
-    const tasksForSelectedDate = tasks.filter((task) => task.dueDate === selectedDateKey);
+    const totalPages = Math.ceil(filteredTasks.length / tasksPerPage);
+    const currentTasks = filteredTasks.slice(
+        (currentPage - 1) * tasksPerPage,
+        currentPage * tasksPerPage
+    );
 
+    const tasksForSelectedDate = tasks.filter(
+        t => t.dueDate === selectedDate.toISOString().split('T')[0]
+    );
+
+    const sidebarItems = useMemo(() => ([
+        { label: 'Overview', icon: LayoutGrid },
+        { label: 'Tasks', icon: List },
+        { label: 'Calendar', icon: Calendar }
+    ]), []);
+
+    /* ==================== UI ==================== */
     return (
-        <div className={`min-h-screen transition-colors duration-300 dashboard-shell ${
-            darkMode
-                ? 'dark bg-gradient-to-br from-[#0B0F19] via-[#111827] to-[#020617]'
-                : 'bg-gradient-to-br from-gray-50 via-white to-gray-100'
+        <div className={`relative min-h-screen transition-colors duration-300 ${
+            darkMode ? 'dark bg-[#05060b] text-white' : 'bg-[#05060b] text-white'
         }`}>
+            <motion.div className="absolute inset-0 aurora-gradient opacity-70" style={{ y: parallaxY }} />
+            <div className="noise-layer" />
 
-            {/* HEADER */}
-            <header className="sticky top-0 z-40 backdrop-blur-xl bg-white/80 dark:bg-black/40 border-b border-gray-200/50 dark:border-white/10 dashboard-header">
-                <div className="max-w-7xl mx-auto px-6 py-5">
+            <div className="relative z-10 flex min-h-screen">
+                {/* SIDEBAR */}
+                <motion.aside
+                    className="hidden lg:flex flex-col gap-8 border-r border-white/10 bg-white/5 backdrop-blur-2xl px-6 py-8"
+                    animate={{ width: sidebarOpen ? 260 : 110 }}
+                >
+                    <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                            <div className="p-3 rounded-2xl bg-gradient-to-br from-indigo-500 to-pink-500">
+                                <Check className="text-white" />
+                            </div>
+                            {sidebarOpen && <h1 className="font-semibold">Task Manager</h1>}
+                        </div>
+                        <button onClick={() => setSidebarOpen(p => !p)}>
+                            {sidebarOpen ? <ChevronLeft /> : <ChevronRight />}
+                        </button>
+                    </div>
 
-                    <div className="flex items-center justify-between gap-6">
-                        <div className="flex items-center gap-4">
+                    <div className="space-y-2">
+                        {sidebarItems.map(item => (
                             <button
-                                onClick={() => setShowProfilePanel(true)}
-                                className="flex items-center justify-center h-12 w-12 rounded-2xl border border-gray-200/70 dark:border-white/10 bg-white/80 dark:bg-white/10 shadow-sm hover:shadow-md icon-pop"
-                                aria-label="Open profile settings"
+                                key={item.label}
+                                className="flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-white/10"
                             >
+                                <item.icon />
+                                {sidebarOpen && item.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="mt-auto text-sm text-white/70">
+                        Keep momentum in motion 🚀
+                    </div>
+                </motion.aside>
+
+                {/* MAIN */}
+                <div className="flex-1 px-6 py-6">
+                    {/* HEADER */}
+                    <div className="flex justify-between items-center mb-6">
+                        <div className="flex items-center gap-4">
+                            <button onClick={() => setShowProfilePanel(true)}>
                                 {user?.profileImage ? (
-                                    <img
-                                        src={user.profileImage}
-                                        alt="Profile"
-                                        className="h-11 w-11 rounded-2xl object-cover"
-                                    />
+                                    <img src={user.profileImage} alt="Profile" className="h-10 w-10 rounded-xl" />
                                 ) : (
-                                    <UserCircle className="w-7 h-7 text-indigo-500" />
+                                    <UserCircle />
                                 )}
                             </button>
-                            <div className="p-3 rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 shadow-lg">
-                                <Check className="w-7 h-7 text-white" />
-                            </div>
                             <div>
-                                <h1 className="text-2xl font-bold tracking-tight">Task Manager</h1>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">
-                                    Welcome back, {user?.username || 'User'}
-                                </p>
+                                <h1 className="text-2xl font-semibold">Dashboard</h1>
+                                <p className="text-white/60">Welcome back, {user?.username}</p>
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-3">
+                        <div className="flex gap-3 items-center">
                             <LiveClock />
-
-                            <button
-                                onClick={() => setDarkMode(!darkMode)}
-                                className="p-2.5 rounded-xl bg-gray-100 dark:bg-white/10 hover:scale-105 transition nav-pill"
-                            >
-                                {darkMode ? <Sun /> : <Moon />}
-                            </button>
-
-                            <button
-                                onClick={handleLogout}
-                                className="p-2.5 rounded-xl bg-red-500/90 hover:bg-red-600 text-white transition nav-pill"
-                            >
+                            <ThemeToggle darkMode={darkMode} onToggle={() => setDarkMode(!darkMode)} />
+                            <button onClick={handleLogout} className="bg-red-500 px-3 py-2 rounded-xl">
                                 <LogOut />
                             </button>
                         </div>
                     </div>
 
-                    {/* SEARCH & FILTERS */}
-                    <div className="mt-6 flex flex-wrap gap-4">
-                        <div className="relative flex-1 min-w-[260px]">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                            <input
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Search tasks..."
-                                className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 focus:ring-2 focus:ring-indigo-500 outline-none input-animated"
-                            />
-                        </div>
+                    {/* STATS */}
+                    <div className="grid md:grid-cols-3 gap-6 mb-8">
+                        {[
+                            { label: 'Total Tasks', value: stats.total },
+                            { label: 'In Progress', value: stats.inProgress },
+                            { label: 'Completed', value: stats.completed }
+                        ].map((s, i) => (
+                            <motion.div
+                                key={s.label}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: i * 0.1 }}
+                                className="p-5 rounded-2xl bg-white/10"
+                            >
+                                <p className="text-white/60">{s.label}</p>
+                                <div className="text-3xl font-bold">
+                                    <AnimatedCounter value={s.value} />
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
 
-                        <select
-                            value={priorityFilter}
-                            onChange={(e) => setPriorityFilter(e.target.value)}
-                            className="px-4 py-3.5 rounded-xl bg-white dark:bg-white/5 border dark:border-white/10 input-animated"
-                        >
-                            <option value="ALL">All Priorities</option>
-                            <option value="HIGH">High</option>
-                            <option value="MEDIUM">Medium</option>
-                            <option value="LOW">Low</option>
-                        </select>
-
-                        <select
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                            className="px-4 py-3.5 rounded-xl bg-white dark:bg-white/5 border dark:border-white/10 input-animated"
-                        >
-                            <option value="ALL">All Status</option>
-                            <option value="PENDING">Pending</option>
-                            <option value="IN_PROGRESS">In Progress</option>
-                            <option value="COMPLETED">Completed</option>
-                        </select>
-
-                        <button
-                            onClick={() => openTaskModal()}
-                            className="px-6 py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-medium shadow hover:scale-105 transition flex items-center gap-2 btn-animated"
-                        >
-                            <Plus className="w-5 h-5" /> New Task
+                    {/* VIEW TOGGLE */}
+                    <div className="flex gap-2 mb-6">
+                        <button onClick={() => setViewMode('list')} className={viewMode === 'list' ? 'bg-indigo-600 px-4 py-2 rounded-xl' : 'px-4 py-2'}>
+                            <List /> List
                         </button>
-
-                        <button
-                            className="px-6 py-3 rounded-xl border border-gray-300 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10 transition flex items-center gap-2 btn-ghost"
-                        >
-                            <Calendar className="w-5 h-5" /> Download Report
+                        <button onClick={() => setViewMode('calendar')} className={viewMode === 'calendar' ? 'bg-indigo-600 px-4 py-2 rounded-xl' : 'px-4 py-2'}>
+                            <LayoutGrid /> Calendar
                         </button>
                     </div>
-                </div>
-            </header>
 
-            {/* MAIN */}
-            <main className="max-w-7xl mx-auto px-6 py-12">
-                <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 section-reveal">
-                    {[
-                        { label: 'Total Tasks', value: stats.total, accent: 'from-indigo-500 to-purple-500' },
-                        { label: 'In Progress', value: stats.inProgress, accent: 'from-sky-500 to-indigo-500' },
-                        { label: 'Completed', value: stats.completed, accent: 'from-emerald-500 to-green-500' },
-                    ].map((card, index) => (
-                        <div
-                            key={card.label}
-                            className="p-5 rounded-2xl border border-gray-200/70 dark:border-white/10 bg-white/80 dark:bg-gray-900/60 shadow-lg stat-card"
-                            style={{ animationDelay: `${index * 120}ms` }}
-                        >
-                            <p className="text-sm text-gray-500 dark:text-gray-400">{card.label}</p>
-                            <div className="mt-4 flex items-center justify-between">
-                                <span className="text-3xl font-semibold text-gray-900 dark:text-white">{card.value}</span>
-                                <div className={`h-10 w-10 rounded-full bg-gradient-to-br ${card.accent}`} />
-                            </div>
-                        </div>
-                    ))}
-                </section>
-
-                <div className="flex items-center justify-between flex-wrap gap-4 mb-8 section-reveal">
-                    <div>
-                        <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">Your Tasks</h2>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Browse tasks in a list or calendar view.
-                        </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => setViewMode('list')}
-                            className={`px-4 py-2 rounded-xl border flex items-center gap-2 nav-pill ${
-                                viewMode === 'list'
-                                    ? 'bg-indigo-600 text-white border-indigo-600 nav-pill-active'
-                                    : 'border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10'
-                            }`}
-                        >
-                            <List className="w-4 h-4" /> List
-                        </button>
-                        <button
-                            onClick={() => setViewMode('calendar')}
-                            className={`px-4 py-2 rounded-xl border flex items-center gap-2 nav-pill ${
-                                viewMode === 'calendar'
-                                    ? 'bg-indigo-600 text-white border-indigo-600 nav-pill-active'
-                                    : 'border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10'
-                            }`}
-                        >
-                            <LayoutGrid className="w-4 h-4" /> Calendar
-                        </button>
-                    </div>
-                </div>
-
-                {viewMode === 'list' ? (
-                    <>
-                        {loading ? (
-                            <div className="rounded-2xl border border-dashed border-gray-300 dark:border-white/10 p-10 text-center text-gray-500 dark:text-gray-400 section-reveal">
-                                Loading tasks...
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10 section-reveal">
-                                {currentTasks.map(task => (
-                                    <TaskCard
-                                        key={task.id}
-                                        task={task}
-                                        onClick={() => openDetailModal(task)}
-                                    />
-                                ))}
-                            </div>
-                        )}
-
-                        {totalPages > 1 && (
-                            <div className="flex justify-center items-center gap-2 mt-14 section-reveal">
-                                <button
-                                    disabled={currentPage === 1}
-                                    onClick={() => setCurrentPage(p => p - 1)}
-                                    className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-white/10 disabled:opacity-40 nav-pill"
-                                >
-                                    <ChevronLeft />
-                                </button>
-
-                                {[...Array(totalPages)].map((_, i) => (
-                                    <button
-                                        key={i}
-                                        onClick={() => setCurrentPage(i + 1)}
-                                        className={`px-3 py-1.5 rounded-lg text-sm transition nav-pill ${
-                                            currentPage === i + 1
-                                                ? 'bg-indigo-600 text-white nav-pill-active'
-                                                : 'hover:bg-gray-200 dark:hover:bg-white/10'
-                                        }`}
-                                    >
-                                        {i + 1}
-                                    </button>
-                                ))}
-
-                                <button
-                                    disabled={currentPage === totalPages}
-                                    onClick={() => setCurrentPage(p => p + 1)}
-                                    className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-white/10 disabled:opacity-40 nav-pill"
-                                >
-                                    <ChevronRight />
-                                </button>
-                            </div>
-                        )}
-                    </>
-                ) : (
-                    <div className="grid grid-cols-1 xl:grid-cols-[2fr,1fr] gap-8 section-reveal">
+                    {/* CONTENT */}
+                    {viewMode === 'list' ? (
+                        <>
+                            {loading ? (
+                                <div className="grid md:grid-cols-3 gap-6">
+                                    {Array.from({ length: 6 }).map((_, i) => <TaskCardSkeleton key={i} />)}
+                                </div>
+                            ) : (
+                                <AnimatePresence>
+                                    <div className="grid md:grid-cols-3 gap-6">
+                                        {currentTasks.map((task, i) => (
+                                            <motion.div
+                                                key={task.id}
+                                                initial={{ opacity: 0, y: 20 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ delay: i * 0.05 }}
+                                            >
+                                                <TaskCard task={task} onClick={() => {
+                                                    setSelectedTask(task);
+                                                    setShowDetailModal(true);
+                                                }} />
+                                            </motion.div>
+                                        ))}
+                                    </div>
+                                </AnimatePresence>
+                            )}
+                        </>
+                    ) : (
                         <CalendarView
                             tasks={tasks}
                             selectedDate={selectedDate}
@@ -340,50 +270,15 @@ const Dashboard = ({ user, darkMode, setDarkMode, showNotification, onUserUpdate
                             onMonthChange={setCalendarMonth}
                             onDateSelect={setSelectedDate}
                         />
-                        <div className="rounded-3xl border border-gray-200/70 dark:border-white/10 bg-white/80 dark:bg-gray-900/60 p-6 shadow-[0_10px_40px_rgba(15,23,42,0.08)] section-reveal">
-                            <div className="mb-4">
-                                <p className="text-sm text-gray-500 dark:text-gray-400">Tasks for</p>
-                                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                                    {selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-                                </h3>
-                            </div>
-                            {loading ? (
-                                <p className="text-sm text-gray-500 dark:text-gray-400">Loading tasks...</p>
-                            ) : tasksForSelectedDate.length === 0 ? (
-                                <p className="text-sm text-gray-500 dark:text-gray-400">
-                                    No tasks scheduled for this date.
-                                </p>
-                            ) : (
-                                <div className="space-y-3">
-                                    {tasksForSelectedDate.map((task) => (
-                                        <button
-                                            key={task.id}
-                                            onClick={() => openDetailModal(task)}
-                                            className="w-full text-left p-4 rounded-2xl border border-gray-200/70 dark:border-white/10 bg-white dark:bg-white/5 hover:shadow-md"
-                                        >
-                                            <h4 className="font-semibold text-gray-900 dark:text-white">
-                                                {task.taskName}
-                                            </h4>
-                                            <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
-                                                {task.description || 'No description'}
-                                            </p>
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
-            </main>
+                    )}
+                </div>
+            </div>
 
             {showTaskModal && (
                 <TaskModal
                     task={selectedTask}
-                    onClose={closeTaskModal}
-                    onSuccess={() => {
-                        fetchTasks();
-                        closeTaskModal();
-                    }}
+                    onClose={() => setShowTaskModal(false)}
+                    onSuccess={fetchTasks}
                     showNotification={showNotification}
                 />
             )}
@@ -391,15 +286,11 @@ const Dashboard = ({ user, darkMode, setDarkMode, showNotification, onUserUpdate
             {showDetailModal && selectedTask && (
                 <TaskDetail
                     task={selectedTask}
-                    onClose={closeDetailModal}
-                    onEdit={() => {
-                        closeDetailModal();
-                        openTaskModal(selectedTask);
-                    }}
+                    onClose={() => setShowDetailModal(false)}
                     onDelete={async () => {
                         await taskService.deleteTask(selectedTask.id);
                         fetchTasks();
-                        closeDetailModal();
+                        setShowDetailModal(false);
                     }}
                 />
             )}
@@ -408,7 +299,7 @@ const Dashboard = ({ user, darkMode, setDarkMode, showNotification, onUserUpdate
                 <ProfilePanel
                     user={user}
                     onClose={() => setShowProfilePanel(false)}
-                    onSave={handleProfileSave}
+                    onSave={onUserUpdate}
                     isSaving={isSavingProfile}
                 />
             )}
