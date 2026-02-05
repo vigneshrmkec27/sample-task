@@ -51,7 +51,7 @@ const LoginScene = ({ onSuccess }) => {
 
     return (
         <motion.section
-            className="relative flex min-h-screen items-center justify-center overflow-hidden"
+            className="relative flex min-h-screen items-center justify-center overflow-hidden login-scene"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -75,7 +75,7 @@ const LoginScene = ({ onSuccess }) => {
 
             <motion.div
                 layoutId="auth-shell"
-                className="relative z-10 w-full max-w-md rounded-[36px] border border-white/10 bg-white/10 p-10 shadow-[0_30px_80px_rgba(15,23,42,0.4)] backdrop-blur-2xl"
+                className="relative z-10 w-full max-w-md rounded-[36px] border border-white/10 bg-white/10 p-10 shadow-[0_30px_80px_rgba(15,23,42,0.4)] backdrop-blur-2xl auth-card"
             >
                 <motion.div
                     className="mb-8 space-y-3 text-center"
@@ -112,7 +112,7 @@ const LoginScene = ({ onSuccess }) => {
                                     value={formState[field]}
                                     onChange={handleChange}
                                     placeholder={`Enter your ${field}`}
-                                    className="w-full bg-transparent text-sm text-white placeholder:text-slate-400 focus:outline-none"
+                                    className="w-full bg-transparent text-sm text-white placeholder:text-slate-400 focus:outline-none input-animated"
                                 />
                                 <motion.span
                                     className="mt-3 block h-[2px] w-full origin-left rounded-full bg-gradient-to-r from-indigo-400 via-sky-400 to-emerald-400"
@@ -126,7 +126,7 @@ const LoginScene = ({ onSuccess }) => {
                     <motion.button
                         type="submit"
                         layoutId="app-shell"
-                        className="relative mt-6 flex w-full items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/10 px-6 py-3 text-sm font-semibold text-white shadow-lg"
+                        className="relative mt-6 flex w-full items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/10 px-6 py-3 text-sm font-semibold text-white shadow-lg btn-animated"
                         style={{ x: springX, y: springY }}
                         onPointerMove={handlePointerMove}
                         onPointerLeave={handlePointerLeave}

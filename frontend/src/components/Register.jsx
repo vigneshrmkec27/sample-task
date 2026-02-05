@@ -46,10 +46,10 @@ const Register = ({ onRegisterSuccess, onSwitchToLogin, darkMode, showNotificati
     };
 
     return (
-        <div className="min-h-screen flex overflow-hidden">
+        <div className="min-h-screen flex overflow-hidden auth-shell">
             {/* LEFT — REGISTER FORM */}
-            <div className="w-full lg:w-[40%] flex items-center justify-center px-10 bg-white dark:bg-gray-900 z-10">
-                <div className="w-full max-w-md animate-in fade-in zoom-in-95">
+            <div className="w-full lg:w-[40%] flex items-center justify-center px-10 bg-white dark:bg-gray-900 z-10 auth-panel">
+                <div className="w-full max-w-md animate-in fade-in zoom-in-95 auth-card">
                     <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-3 tracking-tight">
                         Create account
                     </h1>
@@ -67,7 +67,7 @@ const Register = ({ onRegisterSuccess, onSwitchToLogin, darkMode, showNotificati
                                 setFormData({ ...formData, username: e.target.value })
                             }
                             disabled={loading}
-                            className="w-full px-6 py-4 rounded-full border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-black transition shadow-sm"
+                            className="w-full px-6 py-4 rounded-full border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-black transition shadow-sm input-animated"
                         />
 
                         {/* Email */}
@@ -79,7 +79,7 @@ const Register = ({ onRegisterSuccess, onSwitchToLogin, darkMode, showNotificati
                                 setFormData({ ...formData, email: e.target.value })
                             }
                             disabled={loading}
-                            className="w-full px-6 py-4 rounded-full border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-black transition shadow-sm"
+                            className="w-full px-6 py-4 rounded-full border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-black transition shadow-sm input-animated"
                         />
 
                         {/* Password */}
@@ -92,7 +92,7 @@ const Register = ({ onRegisterSuccess, onSwitchToLogin, darkMode, showNotificati
                                     setFormData({ ...formData, password: e.target.value })
                                 }
                                 disabled={loading}
-                                className="w-full px-6 py-4 pr-16 rounded-full border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-black transition shadow-sm"
+                                className="w-full px-6 py-4 pr-16 rounded-full border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-black transition shadow-sm input-animated"
                             />
 
                             <button
@@ -109,7 +109,7 @@ const Register = ({ onRegisterSuccess, onSwitchToLogin, darkMode, showNotificati
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full bg-black text-white py-4 rounded-full font-semibold shadow-lg hover:scale-[0.98] transition-all disabled:opacity-50"
+                            className="w-full bg-black text-white py-4 rounded-full font-semibold shadow-lg hover:scale-[0.98] transition-all disabled:opacity-50 btn-animated"
                         >
                             {loading ? 'Creating account…' : 'Create account'}
                         </button>
@@ -128,12 +128,12 @@ const Register = ({ onRegisterSuccess, onSwitchToLogin, darkMode, showNotificati
             </div>
 
             {/* RIGHT — SAME ABSTRACT PANEL AS LOGIN */}
-            <div className="hidden lg:flex w-[60%] relative items-center justify-center overflow-hidden bg-gradient-to-br from-emerald-50 via-green-50 to-lime-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700">
+            <div className="hidden lg:flex w-[60%] relative items-center justify-center overflow-hidden bg-gradient-to-br from-emerald-50 via-green-50 to-lime-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700 auth-visual">
 
                 {/* Floating gradient blobs */}
-                <div className="absolute w-[500px] h-[500px] bg-emerald-300/40 rounded-full blur-[140px] top-[-120px] left-[-120px] animate-pulse" />
-                <div className="absolute w-[420px] h-[420px] bg-lime-300/40 rounded-full blur-[140px] bottom-[-120px] right-[-120px] animate-pulse delay-1000" />
-                <div className="absolute w-[300px] h-[300px] bg-green-300/40 rounded-full blur-[120px] top-1/3 right-1/4 animate-pulse delay-500" />
+                <div className="absolute w-[500px] h-[500px] bg-emerald-300/40 rounded-full blur-[140px] top-[-120px] left-[-120px] animate-pulse float-ambient" />
+                <div className="absolute w-[420px] h-[420px] bg-lime-300/40 rounded-full blur-[140px] bottom-[-120px] right-[-120px] animate-pulse float-ambient delay-1000" />
+                <div className="absolute w-[300px] h-[300px] bg-green-300/40 rounded-full blur-[120px] top-1/3 right-1/4 animate-pulse float-ambient delay-500" />
 
                 {/* Content */}
                 <div className="relative z-10 max-w-lg text-center px-12">

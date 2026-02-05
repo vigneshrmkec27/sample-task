@@ -39,6 +39,7 @@ const Notification = ({ message, type = 'success', onClose }) => {
                 backdrop-blur-md
                 transition-all duration-300
                 animate-in slide-in-from-top-4 fade-in
+                toast-animate
                 ${
                 type === 'error'
                     ? 'bg-red-500/90 border-red-400'

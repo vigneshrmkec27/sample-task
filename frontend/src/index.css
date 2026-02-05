@@ -27,11 +27,42 @@ body {
     -moz-osx-font-smoothing: grayscale;
     background-color: #05060b;
     color: #f8fafc;
+    position: relative;
+    overflow-x: hidden;
 }
 
 .dark body {
     background-color: #05060b;
     color: #f8fafc;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    inset: -20%;
+    background: radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.2), transparent 45%),
+    radial-gradient(circle at 80% 30%, rgba(16, 185, 129, 0.18), transparent 40%),
+    radial-gradient(circle at 50% 80%, rgba(236, 72, 153, 0.15), transparent 45%);
+    animation: ambientShift 20s ease-in-out infinite;
+    z-index: -2;
+    pointer-events: none;
+}
+
+body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at 30% 60%, rgba(59, 130, 246, 0.15), transparent 50%),
+    radial-gradient(circle at 70% 20%, rgba(52, 211, 153, 0.15), transparent 50%);
+    filter: blur(20px);
+    animation: floatOrbs 18s ease-in-out infinite;
+    z-index: -1;
+    pointer-events: none;
+}
+
+#root {
+    position: relative;
+    z-index: 0;
 }
 
 code {
@@ -100,6 +131,82 @@ code {
     }
 }
 
+@keyframes ambientShift {
+    0% {
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+    50% {
+        transform: translate3d(-20px, 10px, 0) scale(1.05);
+    }
+    100% {
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+}
+
+@keyframes floatOrbs {
+    0%,
+    100% {
+        transform: translate3d(0, 0, 0);
+    }
+    50% {
+        transform: translate3d(12px, -18px, 0);
+    }
+}
+
+@keyframes fadeRise {
+    from {
+        opacity: 0;
+        transform: translateY(16px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes glowPulse {
+    0%,
+    100% {
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.15);
+    }
+    50% {
+        box-shadow: 0 16px 40px rgba(59, 130, 246, 0.2);
+    }
+}
+
+@keyframes toastIn {
+    from {
+        opacity: 0;
+        transform: translateY(-12px);
+        filter: blur(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+        filter: blur(0);
+    }
+}
+
+@keyframes floatAmbient {
+    0%,
+    100% {
+        transform: translate3d(0, 0, 0);
+    }
+    50% {
+        transform: translate3d(10px, -12px, 0);
+    }
+}
+
+@keyframes navPulse {
+    0%,
+    100% {
+        box-shadow: 0 0 0 rgba(99, 102, 241, 0);
+    }
+    50% {
+        box-shadow: 0 0 16px rgba(99, 102, 241, 0.35);
+    }
+}
+
 .aurora-gradient {
     background: radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.35), transparent 45%),
     radial-gradient(circle at 80% 30%, rgba(16, 185, 129, 0.3), transparent 45%),
@@ -120,6 +227,96 @@ code {
 
 .float-slow {
     animation: floatSlow 8s ease-in-out infinite;
+}
+
+.auth-shell {
+    position: relative;
+}
+
+.auth-card {
+    animation: fadeRise 0.6s ease both;
+}
+
+.auth-visual {
+    animation: fadeRise 0.8s ease both;
+}
+
+.dashboard-header {
+    animation: fadeRise 0.5s ease both;
+}
+
+.section-reveal {
+    animation: fadeRise 0.6s ease both;
+}
+
+.stat-card {
+    animation: fadeRise 0.6s ease both;
+}
+
+.input-animated {
+    transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+}
+
+.input-animated:focus {
+    transform: translateY(-1px);
+    box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.3), 0 10px 25px rgba(15, 23, 42, 0.15);
+}
+
+.btn-animated {
+    position: relative;
+    overflow: hidden;
+    transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+.btn-animated::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3), transparent 55%);
+    opacity: 0;
+    transition: opacity 200ms ease;
+}
+
+.btn-animated:hover::after {
+    opacity: 1;
+}
+
+.btn-animated:active {
+    transform: scale(0.98);
+}
+
+.btn-ghost {
+    transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+.btn-ghost:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(15, 23, 42, 0.12);
+}
+
+.nav-pill {
+    position: relative;
+    transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+.nav-pill:hover {
+    transform: translateY(-1px);
+}
+
+.nav-pill-active {
+    animation: navPulse 2.4s ease-in-out infinite;
+}
+
+.task-card {
+    transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+.toast-animate {
+    animation: toastIn 0.35s ease both;
+}
+
+.float-ambient {
+    animation: floatAmbient 12s ease-in-out infinite;
 }
 
 /* --------------------------------------------------

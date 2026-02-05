@@ -119,21 +119,21 @@ const Dashboard = ({ user, darkMode, setDarkMode, showNotification, onUserUpdate
     const tasksForSelectedDate = tasks.filter((task) => task.dueDate === selectedDateKey);
 
     return (
-        <div className={`min-h-screen transition-colors duration-300 ${
+        <div className={`min-h-screen transition-colors duration-300 dashboard-shell ${
             darkMode
                 ? 'dark bg-gradient-to-br from-[#0B0F19] via-[#111827] to-[#020617]'
                 : 'bg-gradient-to-br from-gray-50 via-white to-gray-100'
         }`}>
 
             {/* HEADER */}
-            <header className="sticky top-0 z-40 backdrop-blur-xl bg-white/80 dark:bg-black/40 border-b border-gray-200/50 dark:border-white/10">
+            <header className="sticky top-0 z-40 backdrop-blur-xl bg-white/80 dark:bg-black/40 border-b border-gray-200/50 dark:border-white/10 dashboard-header">
                 <div className="max-w-7xl mx-auto px-6 py-5">
 
                     <div className="flex items-center justify-between gap-6">
                         <div className="flex items-center gap-4">
                             <button
                                 onClick={() => setShowProfilePanel(true)}
-                                className="flex items-center justify-center h-12 w-12 rounded-2xl border border-gray-200/70 dark:border-white/10 bg-white/80 dark:bg-white/10 shadow-sm hover:shadow-md"
+                                className="flex items-center justify-center h-12 w-12 rounded-2xl border border-gray-200/70 dark:border-white/10 bg-white/80 dark:bg-white/10 shadow-sm hover:shadow-md icon-pop"
                                 aria-label="Open profile settings"
                             >
                                 {user?.profileImage ? (
@@ -162,14 +162,14 @@ const Dashboard = ({ user, darkMode, setDarkMode, showNotification, onUserUpdate
 
                             <button
                                 onClick={() => setDarkMode(!darkMode)}
-                                className="p-2.5 rounded-xl bg-gray-100 dark:bg-white/10 hover:scale-105 transition"
+                                className="p-2.5 rounded-xl bg-gray-100 dark:bg-white/10 hover:scale-105 transition nav-pill"
                             >
                                 {darkMode ? <Sun /> : <Moon />}
                             </button>
 
                             <button
                                 onClick={handleLogout}
-                                className="p-2.5 rounded-xl bg-red-500/90 hover:bg-red-600 text-white transition"
+                                className="p-2.5 rounded-xl bg-red-500/90 hover:bg-red-600 text-white transition nav-pill"
                             >
                                 <LogOut />
                             </button>
@@ -184,14 +184,14 @@ const Dashboard = ({ user, darkMode, setDarkMode, showNotification, onUserUpdate
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="Search tasks..."
-                                className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 focus:ring-2 focus:ring-indigo-500 outline-none"
+                                className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 focus:ring-2 focus:ring-indigo-500 outline-none input-animated"
                             />
                         </div>
 
                         <select
                             value={priorityFilter}
                             onChange={(e) => setPriorityFilter(e.target.value)}
-                            className="px-4 py-3.5 rounded-xl bg-white dark:bg-white/5 border dark:border-white/10"
+                            className="px-4 py-3.5 rounded-xl bg-white dark:bg-white/5 border dark:border-white/10 input-animated"
                         >
                             <option value="ALL">All Priorities</option>
                             <option value="HIGH">High</option>
@@ -202,7 +202,7 @@ const Dashboard = ({ user, darkMode, setDarkMode, showNotification, onUserUpdate
                         <select
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
-                            className="px-4 py-3.5 rounded-xl bg-white dark:bg-white/5 border dark:border-white/10"
+                            className="px-4 py-3.5 rounded-xl bg-white dark:bg-white/5 border dark:border-white/10 input-animated"
                         >
                             <option value="ALL">All Status</option>
                             <option value="PENDING">Pending</option>
@@ -212,13 +212,13 @@ const Dashboard = ({ user, darkMode, setDarkMode, showNotification, onUserUpdate
 
                         <button
                             onClick={() => openTaskModal()}
-                            className="px-6 py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-medium shadow hover:scale-105 transition flex items-center gap-2"
+                            className="px-6 py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-medium shadow hover:scale-105 transition flex items-center gap-2 btn-animated"
                         >
                             <Plus className="w-5 h-5" /> New Task
                         </button>
 
                         <button
-                            className="px-6 py-3 rounded-xl border border-gray-300 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10 transition flex items-center gap-2"
+                            className="px-6 py-3 rounded-xl border border-gray-300 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10 transition flex items-center gap-2 btn-ghost"
                         >
                             <Calendar className="w-5 h-5" /> Download Report
                         </button>
@@ -228,15 +228,16 @@ const Dashboard = ({ user, darkMode, setDarkMode, showNotification, onUserUpdate
 
             {/* MAIN */}
             <main className="max-w-7xl mx-auto px-6 py-12">
-                <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 section-reveal">
                     {[
                         { label: 'Total Tasks', value: stats.total, accent: 'from-indigo-500 to-purple-500' },
                         { label: 'In Progress', value: stats.inProgress, accent: 'from-sky-500 to-indigo-500' },
                         { label: 'Completed', value: stats.completed, accent: 'from-emerald-500 to-green-500' },
-                    ].map((card) => (
+                    ].map((card, index) => (
                         <div
                             key={card.label}
-                            className="p-5 rounded-2xl border border-gray-200/70 dark:border-white/10 bg-white/80 dark:bg-gray-900/60 shadow-lg"
+                            className="p-5 rounded-2xl border border-gray-200/70 dark:border-white/10 bg-white/80 dark:bg-gray-900/60 shadow-lg stat-card"
+                            style={{ animationDelay: `${index * 120}ms` }}
                         >
                             <p className="text-sm text-gray-500 dark:text-gray-400">{card.label}</p>
                             <div className="mt-4 flex items-center justify-between">
@@ -247,7 +248,7 @@ const Dashboard = ({ user, darkMode, setDarkMode, showNotification, onUserUpdate
                     ))}
                 </section>
 
-                <div className="flex items-center justify-between flex-wrap gap-4 mb-8">
+                <div className="flex items-center justify-between flex-wrap gap-4 mb-8 section-reveal">
                     <div>
                         <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">Your Tasks</h2>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -257,9 +258,9 @@ const Dashboard = ({ user, darkMode, setDarkMode, showNotification, onUserUpdate
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => setViewMode('list')}
-                            className={`px-4 py-2 rounded-xl border flex items-center gap-2 ${
+                            className={`px-4 py-2 rounded-xl border flex items-center gap-2 nav-pill ${
                                 viewMode === 'list'
-                                    ? 'bg-indigo-600 text-white border-indigo-600'
+                                    ? 'bg-indigo-600 text-white border-indigo-600 nav-pill-active'
                                     : 'border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10'
                             }`}
                         >
@@ -267,9 +268,9 @@ const Dashboard = ({ user, darkMode, setDarkMode, showNotification, onUserUpdate
                         </button>
                         <button
                             onClick={() => setViewMode('calendar')}
-                            className={`px-4 py-2 rounded-xl border flex items-center gap-2 ${
+                            className={`px-4 py-2 rounded-xl border flex items-center gap-2 nav-pill ${
                                 viewMode === 'calendar'
-                                    ? 'bg-indigo-600 text-white border-indigo-600'
+                                    ? 'bg-indigo-600 text-white border-indigo-600 nav-pill-active'
                                     : 'border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10'
                             }`}
                         >
@@ -281,11 +282,11 @@ const Dashboard = ({ user, darkMode, setDarkMode, showNotification, onUserUpdate
                 {viewMode === 'list' ? (
                     <>
                         {loading ? (
-                            <div className="rounded-2xl border border-dashed border-gray-300 dark:border-white/10 p-10 text-center text-gray-500 dark:text-gray-400">
+                            <div className="rounded-2xl border border-dashed border-gray-300 dark:border-white/10 p-10 text-center text-gray-500 dark:text-gray-400 section-reveal">
                                 Loading tasks...
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10">
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10 section-reveal">
                                 {currentTasks.map(task => (
                                     <TaskCard
                                         key={task.id}
@@ -297,11 +298,11 @@ const Dashboard = ({ user, darkMode, setDarkMode, showNotification, onUserUpdate
                         )}
 
                         {totalPages > 1 && (
-                            <div className="flex justify-center items-center gap-2 mt-14">
+                            <div className="flex justify-center items-center gap-2 mt-14 section-reveal">
                                 <button
                                     disabled={currentPage === 1}
                                     onClick={() => setCurrentPage(p => p - 1)}
-                                    className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-white/10 disabled:opacity-40"
+                                    className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-white/10 disabled:opacity-40 nav-pill"
                                 >
                                     <ChevronLeft />
                                 </button>
@@ -310,9 +311,9 @@ const Dashboard = ({ user, darkMode, setDarkMode, showNotification, onUserUpdate
                                     <button
                                         key={i}
                                         onClick={() => setCurrentPage(i + 1)}
-                                        className={`px-3 py-1.5 rounded-lg text-sm transition ${
+                                        className={`px-3 py-1.5 rounded-lg text-sm transition nav-pill ${
                                             currentPage === i + 1
-                                                ? 'bg-indigo-600 text-white'
+                                                ? 'bg-indigo-600 text-white nav-pill-active'
                                                 : 'hover:bg-gray-200 dark:hover:bg-white/10'
                                         }`}
                                     >
@@ -323,7 +324,7 @@ const Dashboard = ({ user, darkMode, setDarkMode, showNotification, onUserUpdate
                                 <button
                                     disabled={currentPage === totalPages}
                                     onClick={() => setCurrentPage(p => p + 1)}
-                                    className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-white/10 disabled:opacity-40"
+                                    className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-white/10 disabled:opacity-40 nav-pill"
                                 >
                                     <ChevronRight />
                                 </button>
@@ -331,7 +332,7 @@ const Dashboard = ({ user, darkMode, setDarkMode, showNotification, onUserUpdate
                         )}
                     </>
                 ) : (
-                    <div className="grid grid-cols-1 xl:grid-cols-[2fr,1fr] gap-8">
+                    <div className="grid grid-cols-1 xl:grid-cols-[2fr,1fr] gap-8 section-reveal">
                         <CalendarView
                             tasks={tasks}
                             selectedDate={selectedDate}
@@ -339,7 +340,7 @@ const Dashboard = ({ user, darkMode, setDarkMode, showNotification, onUserUpdate
                             onMonthChange={setCalendarMonth}
                             onDateSelect={setSelectedDate}
                         />
-                        <div className="rounded-3xl border border-gray-200/70 dark:border-white/10 bg-white/80 dark:bg-gray-900/60 p-6 shadow-[0_10px_40px_rgba(15,23,42,0.08)]">
+                        <div className="rounded-3xl border border-gray-200/70 dark:border-white/10 bg-white/80 dark:bg-gray-900/60 p-6 shadow-[0_10px_40px_rgba(15,23,42,0.08)] section-reveal">
                             <div className="mb-4">
                                 <p className="text-sm text-gray-500 dark:text-gray-400">Tasks for</p>
                                 <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
