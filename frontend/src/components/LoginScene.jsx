@@ -1,19 +1,21 @@
 import React, { useMemo, useState } from 'react';
-import { motion, useMotionValue, useSpring } from 'framer-motion';
+import { AnimatePresence, motion, useMotionValue, useReducedMotion, useSpring } from 'framer-motion';
 import { motionTokens } from './MotionConfig';
 
 const LoginScene = ({ onSuccess }) => {
     const [formState, setFormState] = useState({ email: '', password: '' });
     const [error, setError] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [ripple, setRipple] = useState({ x: 0, y: 0, key: 0 });
 
     const x = useMotionValue(0);
     const y = useMotionValue(0);
     const springX = useSpring(x, { stiffness: 120, damping: 15, mass: 0.4 });
     const springY = useSpring(y, { stiffness: 120, damping: 15, mass: 0.4 });
+    const prefersReducedMotion = useReducedMotion();
 
     const ambientParticles = useMemo(
-        () => Array.from({ length: 5 }, (_, index) => index),
+        () => Array.from({ length: 6 }, (_, index) => index),
         []
     );
 
@@ -49,6 +51,15 @@ const LoginScene = ({ onSuccess }) => {
         y.set(0);
     };
 
+    const handleRipple = (event) => {
+        const bounds = event.currentTarget.getBoundingClientRect();
+        setRipple({
+            x: event.clientX - bounds.left,
+            y: event.clientY - bounds.top,
+            key: Date.now(),
+        });
+    };
+
     return (
         <motion.section
             className="relative flex min-h-screen items-center justify-center overflow-hidden"
@@ -68,7 +79,7 @@ const LoginScene = ({ onSuccess }) => {
                         top: `${15 + particle * 14}%`,
                         right: `${10 + particle * 8}%`,
                     }}
-                    animate={{ y: [0, -24, 0], opacity: [0.15, 0.35, 0.2] }}
+                    animate={prefersReducedMotion ? { opacity: 0.25 } : { y: [0, -24, 0], opacity: [0.15, 0.35, 0.2] }}
                     transition={{ duration: 9 + particle, repeat: Infinity, ease: 'easeInOut' }}
                 />
             ))}
@@ -76,6 +87,9 @@ const LoginScene = ({ onSuccess }) => {
             <motion.div
                 layoutId="auth-shell"
                 className="relative z-10 w-full max-w-md rounded-[36px] border border-white/10 bg-white/10 p-10 shadow-[0_30px_80px_rgba(15,23,42,0.4)] backdrop-blur-2xl"
+                initial={{ opacity: 0, scale: 0.94, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={motionTokens.spring.medium}
             >
                 <motion.div
                     className="mb-8 space-y-3 text-center"
@@ -99,9 +113,8 @@ const LoginScene = ({ onSuccess }) => {
                             animate={error ? { x: [0, -6, 6, -6, 0] } : { x: 0 }}
                             transition={{ duration: 0.4 }}
                         >
-                            {field}
                             <motion.div
-                                className="mt-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
+                                className="relative mt-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-4 transition"
                                 initial="rest"
                                 whileFocusWithin="focus"
                                 variants={{ rest: { scale: 1 }, focus: { scale: 1.01 } }}
@@ -111,11 +124,15 @@ const LoginScene = ({ onSuccess }) => {
                                     name={field}
                                     value={formState[field]}
                                     onChange={handleChange}
-                                    placeholder={`Enter your ${field}`}
-                                    className="w-full bg-transparent text-sm text-white placeholder:text-slate-400 focus:outline-none"
+                                    placeholder=" "
+                                    autoComplete={field === 'password' ? 'current-password' : 'email'}
+                                    className="peer w-full bg-transparent text-sm text-white placeholder:text-transparent focus:outline-none"
                                 />
+                                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-xs tracking-[0.3em] text-slate-300/60 transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:tracking-[0.2em] peer-placeholder-shown:text-slate-400 peer-focus:-top-2 peer-focus:text-[10px] peer-focus:text-indigo-200">
+                                    {field}
+                                </span>
                                 <motion.span
-                                    className="mt-3 block h-[2px] w-full origin-left rounded-full bg-gradient-to-r from-indigo-400 via-sky-400 to-emerald-400"
+                                    className="mt-4 block h-[2px] w-full origin-left rounded-full bg-gradient-to-r from-indigo-400 via-sky-400 to-emerald-400"
                                     variants={{ rest: { scaleX: 0 }, focus: { scaleX: 1 } }}
                                     transition={{ duration: motionTokens.duration.fast }}
                                 />
@@ -130,6 +147,7 @@ const LoginScene = ({ onSuccess }) => {
                         style={{ x: springX, y: springY }}
                         onPointerMove={handlePointerMove}
                         onPointerLeave={handlePointerLeave}
+                        onPointerDown={handleRipple}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         transition={motionTokens.spring.snappy}
@@ -139,8 +157,30 @@ const LoginScene = ({ onSuccess }) => {
                             whileHover={{ opacity: 1 }}
                             transition={{ duration: motionTokens.duration.fast }}
                         />
-                        <span className="relative z-10">
-                            {isSubmitting ? 'Opening...' : 'Enter workspace'}
+                        <AnimatePresence>
+                            <motion.span
+                                key={ripple.key}
+                                className="absolute h-32 w-32 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/20"
+                                style={{ left: ripple.x, top: ripple.y }}
+                                initial={{ scale: 0, opacity: 0.6 }}
+                                animate={{ scale: 1.2, opacity: 0 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.6 }}
+                            />
+                        </AnimatePresence>
+                        <span className="relative z-10 flex items-center gap-3">
+                            {isSubmitting ? (
+                                <>
+                                    <motion.span
+                                        className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white"
+                                        animate={{ rotate: 360 }}
+                                        transition={{ repeat: Infinity, duration: 0.8, ease: 'linear' }}
+                                    />
+                                    Opening...
+                                </>
+                            ) : (
+                                'Enter workspace'
+                            )}
                         </span>
                     </motion.button>
 
